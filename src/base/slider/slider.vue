@@ -1,21 +1,23 @@
 <template>
-  <div class="slider" ref="slider">
-    <div class="slider-group" ref="sliderGroup">
+  <div class="slide" ref="slide">
+    <div class="slide-group" ref="slideGroup">
       <slot>
       </slot>
     </div>
     <div class="dots">
-      <span class="dot" :class="{active: currentPageIndex === index }" v-for="(item, index) in dots"></span>
+      <span class="dot" v-for="(item, index) in dots" :class="{active: currentPageIndex === index }"></span>
     </div>
   </div>
 </template>
 
 <script type="text/ecmascript-6">
-  import {addClass} from 'common/js/dom'
+  import {addClass} from '../../common/js/dom'
   import BScroll from 'better-scroll'
 
+  const COMPONENT_NAME = 'slide'
+
   export default {
-    name: 'slider',
+    name: COMPONENT_NAME,
     props: {
       loop: {
         type: Boolean,
@@ -28,6 +30,14 @@
       interval: {
         type: Number,
         default: 4000
+      },
+      showDot: {
+        type: Boolean,
+        default: true
+      },
+      click: {
+        type: Boolean,
+        default: true
       }
     },
     data() {
@@ -38,107 +48,137 @@
     },
     mounted() {
       setTimeout(() => {
-        this._setSliderWidth()
-        this._initDots()
-        this._initSlider()
-
+        this._setSlideWidth()
+        if (this.showDot) {
+          this._initDots()
+        }
+        this._initSlide()
         if (this.autoPlay) {
           this._play()
         }
       }, 20)
-
       window.addEventListener('resize', () => {
-        if (!this.slider) {
+        if (!this.slide || !this.slide.enabled) {
           return
         }
-        this._setSliderWidth(true)
-        this.slider.refresh()
+        clearTimeout(this.resizeTimer)
+        this.resizeTimer = setTimeout(() => {
+          if (this.slide.isInTransition) {
+            this._onScrollEnd()
+          } else {
+            if (this.autoPlay) {
+              this._play()
+            }
+          }
+          this.refresh()
+        }, 60)
       })
     },
     activated() {
+      if (!this.slide) {
+        return
+      }
+      this.slide.enable()
+      let pageIndex = this.slide.getCurrentPage().pageX
+      if (pageIndex > this.dots.length) {
+        pageIndex = pageIndex % this.dots.length
+      }
+      this.slide.goToPage(pageIndex, 0, 0)
+      if (this.loop) {
+        pageIndex -= 1
+      }
+      this.currentPageIndex = pageIndex
       if (this.autoPlay) {
         this._play()
       }
     },
     deactivated() {
+      this.slide.disable()
       clearTimeout(this.timer)
     },
     beforeDestroy() {
+      this.slide.disable()
       clearTimeout(this.timer)
     },
     methods: {
-      _setSliderWidth(isResize) {
-        this.children = this.$refs.sliderGroup.children
-
+      refresh() {
+        this._setSlideWidth(true)
+        this.slide.refresh()
+      },
+      next() {
+        this.slide.next()
+      },
+      _setSlideWidth(isResize) {
+        this.children = this.$refs.slideGroup.children
         let width = 0
-        let sliderWidth = this.$refs.slider.clientWidth
+        let slideWidth = this.$refs.slide.clientWidth
         for (let i = 0; i < this.children.length; i++) {
           let child = this.children[i]
-          addClass(child, 'slider-item')
-
-          child.style.width = sliderWidth + 'px'
-          width += sliderWidth
+          addClass(child, 'slide-item')
+          child.style.width = slideWidth + 'px'
+          width += slideWidth
         }
         if (this.loop && !isResize) {
-          width += 2 * sliderWidth
+          width += 2 * slideWidth
         }
-        this.$refs.sliderGroup.style.width = width + 'px'
+        this.$refs.slideGroup.style.width = width + 'px'
       },
-      _initSlider() {
-        this.slider = new BScroll(this.$refs.slider, {
+      _initSlide() {
+        this.slide = new BScroll(this.$refs.slide, {
           scrollX: true,
-          scrollY: false,
           momentum: false,
-          snap: true,
-          snapLoop: this.loop,
-          snapThreshold: 0.3,
-          snapSpeed: 400
+          snap: {
+            loop: this.loop,
+            threshold: 0.3,
+            speed: 400
+          },
+          click: this.click
         })
-
-        this.slider.on('scrollEnd', () => {
-          let pageIndex = this.slider.getCurrentPage().pageX
-          if (this.loop) {
-            pageIndex -= 1
-          }
-          this.currentPageIndex = pageIndex
-
+        this.slide.on('scrollEnd', this._onScrollEnd)
+        this.slide.on('touchend', () => {
           if (this.autoPlay) {
             this._play()
           }
         })
-
-        this.slider.on('beforeScrollStart', () => {
+        this.slide.on('beforeScrollStart', () => {
           if (this.autoPlay) {
             clearTimeout(this.timer)
           }
         })
       },
+      _onScrollEnd() {
+        let pageIndex = this.slide.getCurrentPage().pageX
+        if (this.loop) {
+          pageIndex -= 1
+        }
+        this.currentPageIndex = pageIndex
+        if (this.autoPlay) {
+          this._play()
+        }
+      },
       _initDots() {
         this.dots = new Array(this.children.length)
       },
       _play() {
-        let pageIndex = this.currentPageIndex + 1
-        if (this.loop) {
-          pageIndex += 1
-        }
+        let pageIndex = this.slide.getCurrentPage().pageX + 1
+        clearTimeout(this.timer)
         this.timer = setTimeout(() => {
-          this.slider.goToPage(pageIndex, 0, 400)
+          this.slide.goToPage(pageIndex, 0, 400)
         }, this.interval)
       }
     }
   }
 </script>
 
-<style scoped lang="stylus" rel="stylesheet/stylus">
+<style lang="stylus" rel="stylesheet/stylus">
   @import "~common/stylus/variable"
-
-  .slider
+  .slide
     min-height: 1px
-    .slider-group
+    .slide-group
       position: relative
       overflow: hidden
       white-space: nowrap
-      .slider-item
+      .slide-item
         float: left
         box-sizing: border-box
         overflow: hidden
@@ -156,6 +196,7 @@
       right: 0
       left: 0
       bottom: 12px
+      transform: translateZ(1px)
       text-align: center
       font-size: 0
       .dot
