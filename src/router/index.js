@@ -23,6 +23,11 @@ const search = (resolve) => {
     resolve(module)
   })
 }
+const SingerDetail = (resolve) => {
+  import('components/singer-detail/singer-detail').then((module) => {
+    resolve(module)
+  })
+}
 export default new Router({
   mode: 'history',
   routes: [
@@ -36,7 +41,13 @@ export default new Router({
     },
     {
       path: '/singer',
-      component: singer
+      component: singer,
+      children: [
+        {
+          path: ':id',
+          component: SingerDetail
+        }
+      ]
     },
     {
       path: '/rank',
