@@ -42,10 +42,11 @@
             <span></span>
           </div>
           <div class="progress-wrapper">
-            <span class="time time-l"></span>
+            <span class="time time-l">{{format(currentTime)}}</span>
             <div class="progress-bar-wrapper">
+              <progerss-bar :percent="percent"></progerss-bar>
             </div>
-            <span class="time time-r"></span>
+            <span class="time time-r">{{format(currentSong.duration)}}</span>
           </div>
           <div class="operators">
             <div class="icon i-left">
@@ -84,7 +85,7 @@
         </div>
       </div>
     </transition>
-    <audio ref="audio" :src="currentSong.url" @canplay="ready" @error="error"></audio>
+    <audio ref="audio" :src="currentSong.url" @canplay="ready" @error="error" @timeupdate="updateTime"></audio>
   </div>
 </template>
 
@@ -93,13 +94,15 @@
   import animations from 'create-keyframe-animation'
   import {prefixStyle} from '../../common/js/dom'
   import Scroll from '../../base/scroll/scroll.vue'
+  import ProgerssBar from '../../base/progress-bar/progress-bar.vue'
 
   const transform = prefixStyle('transform')
 
   export default {
     data() {
       return {
-        songReady: false
+        songReady: false,
+        currentTime: 0
       }
     },
     computed: {
@@ -121,6 +124,9 @@
       ]),
       disableCls() {
         return this.songReady ? '' : 'disable'
+      },
+      percent() {
+        return this.currentTime / this.currentSong.duration
       }
     },
     methods: {
@@ -210,6 +216,9 @@
       error() {
         this.songReady = true
       },
+      updateTime(e) {
+        this.currentTime = e.target.currentTime
+      },
       _getPosAndScale() {
         const targetWidth = 40
         const paddingLeft = 40
@@ -224,6 +233,20 @@
           y,
           scale
         }
+      },
+      format(interval) {
+        interval = interval | 0
+        const minute = this._pad(interval / 60 | 0)
+        const second = this._pad(interval % 60 | 0)
+        return `${minute}:${second}`
+      },
+      _pad(num, n = 2) {
+        let len = num.toString().length
+        while (len < n) {
+          num = '0' + num
+          len++
+        }
+        return num
       },
       ...mapMutations({
         setFullScreen: 'SET_FULL_SCREEN',
@@ -245,7 +268,8 @@
       }
     },
     components: {
-      Scroll
+      Scroll,
+      ProgerssBar
     }
   }
 </script>
@@ -397,8 +421,10 @@
             width: 30px
             &.time-l
               text-align: left
+              margin-right: 5px
             &.time-r
               text-align: right
+              margin-left: 5px
           .progress-bar-wrapper
             flex: 1
         .operators
