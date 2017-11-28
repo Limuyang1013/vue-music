@@ -1,5 +1,5 @@
 <template>
-  <div class="progress-bar" ref="progressBar">
+  <div class="progress-bar" ref="progressBar" @click="progressClick">
     <div class="bar-inner">
       <div class="progress" ref="progress"></div>
       <div class="progress-btn-wrapper" ref="progressBtn"
@@ -52,6 +52,14 @@
       _offset(offsetWidth) {
         this.$refs.progress.style.width = `${offsetWidth}px`
         this.$refs.progressBtn.style[transform] = `translate3d(${offsetWidth}px,0,0)`
+      },
+      progressClick(e) {
+        const rect = this.$refs.progressBar.getBoundingClientRect()
+        const offsetWidth = e.pageX - rect.left
+        this._offset(offsetWidth)
+        // 这里当我们点击 progressBtn 的时候，e.offsetX 获取不对
+        // this._offset(e.offsetX)
+        this._triggerPercent()
       },
       _triggerPercent() {
         const barWidth = this.$refs.progressBar.clientWidth - progressBtnWidth
