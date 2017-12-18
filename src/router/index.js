@@ -28,6 +28,11 @@ const SingerDetail = (resolve) => {
     resolve(module)
   })
 }
+const disc = (resolve) => {
+  import('components/disc/disc').then((module) => {
+    resolve(module)
+  })
+}
 export default new Router({
   mode: 'history',
   routes: [
@@ -37,7 +42,13 @@ export default new Router({
     },
     {
       path: '/recommend',
-      component: recommend
+      component: recommend,
+      children: [
+        {
+          path: ':id',
+          component: disc
+        }
+      ]
     },
     {
       path: '/singer',
