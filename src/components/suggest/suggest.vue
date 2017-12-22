@@ -1,7 +1,7 @@
 <template>
     <div class="suggest">
       <ul class="suggest-list">
-        <li class="suggest-item" v-for="item in data">
+        <li class="suggest-item" v-for="item in result">
           <div class="icon">
             <i :class="getIconCls(item)"></i>
           </div>
@@ -34,7 +34,7 @@
     data() {
       return {
         page: 1,
-        data: []
+        result: []
       }
     },
     methods: {
@@ -63,11 +63,11 @@
         let ret = []
         if (data.zhida && data.zhida.singerid) {
           ret.push({...data.zhida, ...{type: TYPE_SINGER}})
-          console.log(ret)
         }
         if (data.song) {
           ret = ret.concat(data.song.list)
         }
+        console.log(ret)
         return ret
       }
     },

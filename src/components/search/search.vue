@@ -42,7 +42,7 @@
         this.$refs.searchBox.setQuery(query)
       },
       onQueryChange(query) {
-        this.query = 'query'
+        this.query = query
       },
       _getHotKey() {
         getHotKey().then((res) => {
