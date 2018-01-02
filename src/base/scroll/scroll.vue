@@ -36,6 +36,10 @@
       refreshDelay: {
         type: Number,
         default: 20
+      },
+      scrollX: {
+        type: Boolean,
+        default: false
       }
     },
     mounted() {
@@ -50,7 +54,8 @@
         }
         this.scroll = new BScroll(this.$refs.wrapper, {
           probeType: this.probeType,
-          click: this.click
+          click: this.click,
+          scrollX: this.scrollX
         })
 
         if (this.listenScroll) {
